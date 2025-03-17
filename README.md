@@ -2,6 +2,7 @@
 Optimized Chronometric Transposition for AudioVisual Entrainment Systems
 
 Omni Spectral Strobe Script
+
 This repository contains a fully integrated Python script that extracts spectral data from an audio file and prepares output for two stroboscope systems: SCCS and RX1. The script supports a flexible workflow by allowing the user to specify:
 
 The number of channels to extract (1, 2, 3, or 4) via FFT peak–detection.
@@ -24,6 +25,7 @@ Produces both an overlay plot and a 2×2 subplot view for visual inspection.
 For SCCS, the output is a CSV file that contains all extracted spectral information, including all transposition columns and separate amplitude columns. For RX1, the script converts the CSV into an STP–formatted text file that uses the frequency columns corresponding to the selected transposition and the RX1 amplitude columns.
 
 Features
+
 Spectral Extraction:
 Uses FFT and peak detection to extract up to four distinct frequency peaks per time slice.
 
@@ -87,6 +89,7 @@ Device Loading:
 Finally, the script calls your SCCS device–loading function to send the prepared 1D data array to the hardware.
 
 How It Works
+
 Spectral Extraction:
 The script uses Librosa to compute the STFT of the input audio. It then detects prominent peaks (above 10% of the maximum amplitude) in each time slice, calculates note and deviation information, and scales the detected frequency into a specified octave range (the alpha band).
 
