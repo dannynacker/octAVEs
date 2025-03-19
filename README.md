@@ -1,103 +1,90 @@
 # octAVEs
 Optimized Chronometric Transposition for AudioVisual Entrainment Systems
 
-Omni Spectral Strobe Script
+The octAVEs is a versatile Python tool designed to convert audio files into control parameters for audiovisual strobe devices. It extracts spectral information from an audio file, scales and maps frequencies into musical intervals, and outputs the results in formats compatible with two device types:
 
-This repository contains a fully integrated Python script that extracts spectral data from an audio file and prepares output for two stroboscope systems: SCCS and RX1. The script supports a flexible workflow by allowing the user to specify:
+SCCS – which uses a CSV file for MATLAB-based workflows.
+RX1 – which requires an STP (text) file for its operation.
 
-The number of channels to extract (1, 2, 3, or 4) via FFT peak–detection.
-The desired transposition interval and direction (Unison, Up, or Down for any musical interval from 0 to 12).
-Whether the duty cycle should be inverted.
-The channel mapping mode (i.e. whether to duplicate a single channel, split two channels across outputs, or use all four independently).
-Based on these selections, the script:
-
-Extracts candidate frequency peaks using Librosa’s STFT.
-Computes note names and deviation values using an extended frequency mapping (from C–5 to B–15).
-Scales frequencies into a target “alpha band” using a pre‐defined frequency array.
-Generates transposed frequencies (both Up and Down) for every candidate across all intervals.
-Normalizes amplitude values into two scales:
-0–255 for the SCCS device (CSV output).
-0–100 for the RX1 device (STP text output).
-Duplicates channel data as needed based on the user–selected mapping mode.
-Interpolates the data at 2000 Hz, rotates candidate channels randomly each second, and generates a square–wave LED pattern.
-Packages the LED pattern and DAC brightness data into a 1D array for device loading.
-Produces both an overlay plot and a 2×2 subplot view for visual inspection.
-For SCCS, the output is a CSV file that contains all extracted spectral information, including all transposition columns and separate amplitude columns. For RX1, the script converts the CSV into an STP–formatted text file that uses the frequency columns corresponding to the selected transposition and the RX1 amplitude columns.
-
-Features
+Key Features
 
 Spectral Extraction:
-Uses FFT and peak detection to extract up to four distinct frequency peaks per time slice.
+Uses a Short-Time Fourier Transform (STFT) to analyze the audio file and extract prominent frequency peaks. The user specifies how many channels (1–4) to extract.
 
-Note Mapping:
-Computes the closest musical note and deviation using a full extended frequency mapping.
+Musical Transposition:
+Maps extracted frequencies into the specified musical interval (e.g., Minor Third, Perfect Fourth) and direction (Unison, Up, or Down).
 
-Transposition:
-Calculates both Up and Down transpositions for every musical interval (Unison through Octave) and stores them as separate columns.
+Dynamic Amplitude Scaling:
+Scales raw amplitude values into two ranges:
 
-Amplitude Scaling:
-Normalizes raw amplitude data to 0–255 for SCCS and to 0–100 for RX1.
+0–255 for SCCS output.
+0–100 for RX1 output.
+Dwell Time Grouping (Resolution Adjustment):
 
-Flexible Channel Mapping:
-Supports mapping modes to duplicate channels as needed so that the output always has four channels.
-
-Interpolation & Rotation:
-Interpolates the extracted data at a 2000 Hz sample rate and applies random channel rotation each second for dynamic LED assignment.
-
-LED Pattern Generation:
-Generates a square–wave LED “on” pattern using the instantaneous frequency and a dynamic duty cycle (computed from the scaled amplitude).
-
-Device Output:
-
-SCCS: Outputs a CSV file that can be directly used by a MATLAB script for the SCCS device.
-RX1: Generates an STP–formatted text file that uses the selected transposition columns and RX1 amplitude values.
-Visualization:
-Provides two types of plots:
-
-An overlay plot showing frequency and duty cycle behavior.
-A 2×2 tiled subplot view for individual channel inspection.
-Requirements
-Python 3.x
-Libraries: numpy, pandas, librosa, scipy, matplotlib
-A valid audio file (e.g., MP3) to process.
-MATLAB (for SCCS interface using the CSV output) and your device-specific loading function (SCCS_strobe_load_device).
-Usage
-Run the Script:
-Execute the Python script. You will be prompted for:
-
-The path to your audio file.
-The number of channels to extract (1, 2, 3, or 4).
-The transposition direction (0 for Unison, 1 for Up, 2 for Down).
-The musical interval (choose from the provided list).
-Whether to invert the duty cycle (y/n).
-The channel mapping mode:
-(1) Use one extracted channel for all outputs.
-(2) Use two extracted channels (channel 1 for outputs 1–2, channel 2 for outputs 3–4).
-(4) Use all four extracted channels.
-The desired device output:
-(1) SCCS (CSV output for MATLAB interface)
-(2) RX1 (STP text file output)
-The desired output file name (without extension).
+Manual Grouping: The user may specify a “dwell time” (in seconds) to group multiple high-resolution time steps into a single aggregated step.
+Forced Grouping: If the default 100 ms resolution yields more than 3,000 steps (exceeding RX1’s capacity), the script automatically computes a dwell time that brings the total step count within limits.
+The grouping aggregates frequency, amplitude, and duty cycle parameters—averaging them or splitting them into start and end values (for dwell times of 1 second or more) to allow smooth interpolation.
 Output Files:
+The script saves two CSV files:
 
-If SCCS is selected, a CSV file (e.g., my_output.csv) will be created with full spectral and transposition data.
-If RX1 is selected, an STP file (e.g., my_output_stp.txt) will be generated using the selected transposition columns and amplitude values scaled to 0–100.
+The original high-resolution CSV ([filename]_original.csv).
+A grouped CSV ([filename]_grouped.csv) if dwell grouping is applied.
+For RX1, the grouped data is further used to create an STP text file ([filename]_stp.txt).
+
+User Input Validation:
+All user inputs (except file paths/names) are validated. The script repeatedly prompts for input until a valid response is provided (for example, ensuring transposition direction is only 0, 1, or 2, and yes/no answers are "y" or "n").
+
 Visualization:
-The script will generate two plots to allow you to inspect the extracted frequency and duty cycle behavior.
-
-Device Loading:
-Finally, the script calls your SCCS device–loading function to send the prepared 1D data array to the hardware.
+A plot is generated to display the evolution of frequency and brightness/duty cycle over time, allowing for quick visual analysis of the spectral and dynamic behavior.
 
 How It Works
 
-Spectral Extraction:
-The script uses Librosa to compute the STFT of the input audio. It then detects prominent peaks (above 10% of the maximum amplitude) in each time slice, calculates note and deviation information, and scales the detected frequency into a specified octave range (the alpha band).
+Audio Processing and Spectral Extraction:
+The script loads an audio file using librosa and computes the STFT. It extracts prominent frequency peaks (up to the specified channel count) for each time slice, and computes corresponding parameters (frequency, amplitude, note, and deviation). These values are scaled into the alpha band using a predefined frequency mapping.
 
-Transposition & Amplitude Scaling:
-For each candidate frequency, the script computes transpositions (both Up and Down) for every musical interval. The raw amplitude is scaled to two ranges: 0–255 (for SCCS) and 0–100 (for RX1).
+Dynamic Amplitude Scaling:
+The extracted amplitudes are dynamically scaled to produce two sets of columns:
 
-Channel Mapping & Rotation:
-Based on the user's channel mapping mode, the extracted channels are duplicated as needed so that four outputs are always provided. The script then randomly assigns the candidate channels to the four physical LED ring channels on a per-second basis.
+SCCS Amplitudes: Scaled to a range of 0–255.
+RX1 Amplitudes: Scaled to a range of 0–100.
+The script handles both the regular (high-resolution) and the interpolated (grouped) modes seamlessly.
 
-LED Pattern & Data Packaging:
-A square–wave LED pattern is generated using the instantaneous frequency and a dynamic duty cycle computed from the amplitude. The center LED is forced off, and the resulting LED pattern and DAC brightness data are packaged into a 1D array for device loading.
+Dwell Time Grouping (Resolution Adjustment):
+
+The user is prompted whether to manually apply dwell grouping.
+If manual grouping is chosen, the user specifies the dwell time (or "min" for no grouping).
+If manual grouping is declined but the default resolution (100 ms per step) results in more than 3,000 steps, the script forces dwell grouping by automatically calculating a new dwell time.
+Grouping aggregates data within each dwell period (averaging for short dwell times or splitting into start/end values for dwell times ≥ 1 second) to produce fewer steps while preserving essential dynamics.
+Channel Duplication:
+Depending on the chosen channel mapping mode (1 channel to all 4, 2 channels, or all 4 channels independently), the script duplicates channels accordingly to fit the device’s 4 oscillator slots.
+
+CSV and STP File Generation:
+
+The original high-resolution data is saved as [filename]_original.csv.
+If dwell grouping is applied (manually or forced), a grouped CSV ([filename]_grouped.csv) is also saved.
+For RX1 output, the grouped data (or original if grouping wasn’t needed) is further processed to generate an STP text file ([filename]_stp.txt), ensuring that the number of steps does not exceed the RX1 device’s limits.
+Plotting:
+Finally, the script plots the behavior over time, showing frequency curves and duty cycle/brightness curves for each channel.
+
+Intended Use
+
+This script is ideal for artists, designers, and researchers who wish to convert audio into dynamic visual control data for strobe devices. It provides a flexible and user-friendly method to bridge audio processing and visual output, ensuring that device limitations are met while retaining creative control over the audiovisual transformation.
+
+Usage
+
+Run the script.
+When prompted, enter the path to your audio file.
+Specify the number of spectral channels to extract (1–4).
+Choose the transposition direction (0 = Unison, 1 = Up, 2 = Down) and a musical interval.
+Decide whether to invert the duty cycle.
+Select the channel mapping mode (1, 2, or 4).
+Choose the device output:
+SCCS (CSV output for MATLAB)
+RX1 (STP text file output)
+Provide an output file name.
+For RX1, decide whether to apply dwell grouping manually. If you decline and the default resolution exceeds RX1’s 3000-step limit, the script will automatically force grouping.
+The script will create the original and (if applicable) grouped CSV files, generate an STP file (for RX1), and display a plot of the extracted behavior.
+
+Conclusion
+
+The octAVEs script offers a robust and flexible workflow for converting audio files into control parameters for strobe devices. By managing resolution through dwell time grouping and providing thorough input validation and output visualization, the script enables a smooth transition from audio signal to visual performance. Whether you need the granular detail of the original data or a grouped version tailored for device constraints, this tool is designed to meet your creative and technical requirements.
