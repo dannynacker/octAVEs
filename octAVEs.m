@@ -12,12 +12,13 @@
 %   6. Every altPeriod seconds, randomly reassigns the candidate channels to the
 %      four ring LED channels.
 %   7. Generates a square–wave LED pattern based on the (interpolated) frequency
-%      and dynamic duty cycle (computed from Amplitude_SCCS).
+%      and dynamic duty cycle (computed from Amplitude_SCCS). If duty cycle inversion
+%      is enabled, the duty cycle values are inverted (i.e. brightness is used).
 %   8. Sets the center LED off and assigns ring brightness as DAC data.
 %   9. Converts the LED pattern to an 8–bit value per frame and packages it as a
 %      1D array.
 %  10. Loads the data to the device.
-%  11. Produces two plots: an overlay and a 2×2 subplot view.
+%  11. Produces two plots: an overlay and a 2×2 (or 1×2/1×1) subplot view.
 
 clear; clc;
 
@@ -142,13 +143,19 @@ end
 
 %% ========== LED PATTERN GENERATION ==========
 % Generate LED "on" pattern based on ring frequency and duty cycle.
+% If invert_duty is true, use the inverted duty cycle (i.e., brightness) for the device.
 ledONPattern = zeros(nFrames, 8);
 waveformType = 'square';
 
 for ch = 1:nChannels
-    dutyCycle = (ringBrightness(:, ch) / 255) * 100;  % Convert amplitude (0-255) to duty cycle (%)
+    if invert_duty
+         % Invert the duty cycle for device loading.
+         dutyCycleForDevice = 100 - (ringBrightness(:, ch) / 255) * 100;
+    else
+         dutyCycleForDevice = (ringBrightness(:, ch) / 255) * 100;
+    end
     phase = mod(sampleTimes .* ringFreqs(:, ch), 1);
-    ledONPattern(:, ch) = phase < (dutyCycle / 100);
+    ledONPattern(:, ch) = phase < (dutyCycleForDevice / 100);
     ledONPattern(:, ch+4) = ledONPattern(:, ch);  % Mirror for additional channels
 end
 
@@ -243,7 +250,7 @@ end
 
 legend('Location', 'best');
 
-% Here we create a two-line title so that an empty line adds spacing.
+% Create a two-line title to add vertical spacing.
 title({sprintf('%s | Selected Audiovisual Transposition: %s | Channels: %d', ...
     session_name, clean_column_name, nPlotChannels), ' '});
 
