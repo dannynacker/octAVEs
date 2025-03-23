@@ -9,7 +9,8 @@ RX1 – which requires an STP (text) file for its operation.
 Both pipelines share a similar workflow in terms of amplitude scaling, dwell time grouping, channel mapping, and output generation, but they differ in the method of spectral extraction and frequency mapping.
 
 # Overview
-octAVEs (FFT-based Extraction)
+
+# octAVEs (FFT-based Extraction)
 
 "Optimized Chronometric Tuning for AudioVisual Entrainment Systems"
 
